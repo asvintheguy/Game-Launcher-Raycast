@@ -7,7 +7,8 @@
       "WebFetch(domain:developers.raycast.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(grep:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

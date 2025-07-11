@@ -16,94 +16,162 @@ export class EpicSyncEngine implements ISyncEngine {
     public SynchronizedGames: Game[] = []
 
     async SynchronizeGames(): Promise<void> {
-        const epicGames = await this.GetEpicGamesFromMetadata()
-        const syncedGames: Game[] = []
+        console.log('Starting Epic Games synchronization...')
+        try {
+            const epicGames = await this.GetEpicGamesFromMetadata()
+            const syncedGames: Game[] = []
 
-        for (const epicGame of epicGames) {
-            const executablePath = this.getGameExecutablePath(epicGame)
-            const iconPath = getGameIcon(executablePath)
-            
-            const game: Game = {
-                id: `epic-${epicGame.AppName}`,
-                title: epicGame.DisplayName,
-                platform: this.PlatformName,
-                iconPath: iconPath,
-                launchCommand: this.PrepareRunTask(epicGame.CatalogNamespace, epicGame.CatalogItemId, epicGame.AppName),
-                runTask: async () => {
-                    // Launch game using system command
-                    await execAsync(`start "" "${this.PrepareRunTask(epicGame.CatalogNamespace, epicGame.CatalogItemId, epicGame.AppName)}"`)
+            for (const epicGame of epicGames) {
+                const executablePath = this.getGameExecutablePath(epicGame)
+                const iconPath = getGameIcon(executablePath)
+                
+                const game: Game = {
+                    id: `epic-${epicGame.AppName}`,
+                    title: epicGame.DisplayName,
+                    platform: this.PlatformName,
+                    iconPath: iconPath,
+                    launchCommand: this.PrepareRunTask(epicGame.CatalogNamespace, epicGame.CatalogItemId, epicGame.AppName)
                 }
+                syncedGames.push(game)
             }
-            syncedGames.push(game)
-        }
 
-        this.SynchronizedGames = syncedGames
+            this.SynchronizedGames = syncedGames
+            console.log(`Epic Games synchronization completed. Found ${syncedGames.length} games.`)
+        } catch (error) {
+            console.error('Epic Games sync failed:', error)
+            this.SynchronizedGames = []
+            throw new Error(`Epic Games synchronization failed: ${error}`)
+        }
     }
 
     private async GetEpicGamesFromMetadata(): Promise<EpicGame[]> {
-        // Get metadata directory from registry (GameFinder approach)
-        let manifestsPath = await this.getRegistryValue(EpicGamesConsts.RegKeyPath, EpicGamesConsts.RegKeyValueName)
+        const manifestsPath = await this.getManifestDirectory()
         
-        // Fallback to default paths if registry fails
-        if (!manifestsPath || !existsSync(manifestsPath)) {
-            const defaultPaths = [
-                "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests",
-                `${process.env.PROGRAMDATA}\\Epic\\EpicGamesLauncher\\Data\\Manifests`,
-                `${process.env.LOCALAPPDATA}\\EpicGamesLauncher\\Saved\\Manifests`,
-                `${process.env.APPDATA}\\Epic\\EpicGamesLauncher\\Data\\Manifests`
-            ]
-            
-            for (const defaultPath of defaultPaths) {
-                if (existsSync(defaultPath)) {
-                    manifestsPath = defaultPath
-                    break
-                }
-            }
-            
-            if (!manifestsPath || !existsSync(manifestsPath)) {
-                console.log('Epic Games manifests directory not found')
-                return []
-            }
+        if (!manifestsPath) {
+            console.error('Epic Games manifests directory not found')
+            return []
+        }
+
+        if (!existsSync(manifestsPath)) {
+            console.error(`The manifest directory ${manifestsPath} does not exist!`)
+            return []
         }
 
         console.log(`Found Epic Games manifests at: ${manifestsPath}`)
 
         const epicGames: EpicGame[] = []
-        const metadataFiles = readdirSync(manifestsPath).filter(file => file.endsWith('.item'))
+        
+        let metadataFiles: string[]
+        try {
+            metadataFiles = readdirSync(manifestsPath).filter(file => file.endsWith('.item'))
+        } catch (error) {
+            console.error(`Failed to read manifest directory ${manifestsPath}:`, error)
+            return []
+        }
+
+        if (metadataFiles.length === 0) {
+            console.warn(`The manifest directory ${manifestsPath} does not contain any .item files`)
+            return []
+        }
 
         console.log(`Found ${metadataFiles.length} Epic Games manifest files`)
 
         for (const metadataFile of metadataFiles) {
             try {
                 const fullPath = join(manifestsPath, metadataFile)
-                const fileContent = readFileSync(fullPath, 'utf8')
+                const game = await this.deserializeManifestFile(fullPath)
                 
-                let jObject
-                try {
-                    jObject = JSON.parse(fileContent)
-                } catch (parseError) {
-                    // Try to fix common JSON issues and parse again
-                    try {
-                        const fixedContent = this.fixMalformedJson(fileContent)
-                        jObject = JSON.parse(fixedContent)
-                    } catch (secondParseError) {
-                        // Silently skip malformed JSON files - they're not critical
-                        continue
-                    }
-                }
-
-                const game = EpicGame.CreateFromJObject(jObject)
-                if (game != null) {
+                if (game) {
                     epicGames.push(game)
                 }
             } catch (error) {
-                // Silently skip files that can't be processed
+                console.error(`Failed to process manifest file ${metadataFile}:`, error)
                 continue
             }
         }
 
         console.log(`Processed ${epicGames.length} Epic Games`)
         return epicGames
+    }
+
+    private async getManifestDirectory(): Promise<string | null> {
+        // Try registry first (following C# EGSHandler pattern)
+        const registryPath = await this.tryGetManifestDirFromRegistry()
+        if (registryPath && existsSync(registryPath)) {
+            console.log(`Found Epic Games manifest directory from registry: ${registryPath}`)
+            return registryPath
+        }
+
+        // Fallback to default paths
+        console.log('Registry lookup failed, trying default paths...')
+        
+        const defaultPaths = [
+            "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests",
+            `${process.env.PROGRAMDATA}\\Epic\\EpicGamesLauncher\\Data\\Manifests`,
+            `${process.env.LOCALAPPDATA}\\EpicGamesLauncher\\Saved\\Manifests`,
+            `${process.env.APPDATA}\\Epic\\EpicGamesLauncher\\Data\\Manifests`
+        ]
+        
+        for (const defaultPath of defaultPaths) {
+            if (defaultPath && existsSync(defaultPath)) {
+                console.log(`Found Epic Games manifest directory at default path: ${defaultPath}`)
+                return defaultPath
+            }
+        }
+
+        return null
+    }
+
+    private async tryGetManifestDirFromRegistry(): Promise<string | null> {
+        try {
+            const manifestDir = await this.getRegistryValue(EpicGamesConsts.RegKeyPath, EpicGamesConsts.RegKeyValueName)
+            return manifestDir || null
+        } catch (error) {
+            console.warn('Failed to get manifest directory from registry:', error)
+            return null
+        }
+    }
+
+    private async deserializeManifestFile(itemFile: string): Promise<EpicGame | null> {
+        try {
+            const fileContent = readFileSync(itemFile, 'utf8')
+            
+            let jObject
+            try {
+                jObject = JSON.parse(fileContent)
+            } catch (parseError) {
+                // Try to fix common JSON issues and parse again
+                try {
+                    const fixedContent = this.fixMalformedJson(fileContent)
+                    jObject = JSON.parse(fixedContent)
+                } catch (secondParseError) {
+                    console.warn(`Unable to deserialize file ${itemFile}: Invalid JSON`)
+                    return null
+                }
+            }
+
+            // Validate required fields (following C# validation pattern)
+            if (!jObject.CatalogItemId) {
+                console.warn(`Manifest ${itemFile} does not have a value "CatalogItemId"`)
+                return null
+            }
+
+            if (!jObject.DisplayName) {
+                console.warn(`Manifest ${itemFile} does not have a value "DisplayName"`)
+                return null
+            }
+
+            if (!jObject.InstallLocation || jObject.InstallLocation.trim() === '') {
+                console.warn(`Manifest ${itemFile} does not have a value "InstallLocation"`)
+                return null
+            }
+
+            const game = EpicGame.CreateFromJObject(jObject)
+            return game
+        } catch (error) {
+            console.error(`Unable to deserialize file ${itemFile}:`, error)
+            return null
+        }
     }
 
     private PrepareRunTask(catalogNamespace: string, catalogItemId: string, appName: string): string {
@@ -148,7 +216,8 @@ export class EpicSyncEngine implements ISyncEngine {
     private async getRegistryValue(keyPath: string, valueName: string): Promise<string> {
         try {
             const result = await execAsync(`reg query "${keyPath}" /v ${valueName}`)
-            const match = result.stdout.match(new RegExp(`${valueName}\\\\s+REG_SZ\\\\s+(.+)`))
+            console.log(`Registry query result: ${result.stdout}`)
+            const match = result.stdout.match(new RegExp(`${valueName}\\s+REG_SZ\\s+(.+)`))
             return match ? match[1].trim() : ''
         } catch (error) {
             return ''

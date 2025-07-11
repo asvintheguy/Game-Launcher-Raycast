@@ -29,13 +29,24 @@ export class SteamSyncEngine implements ISyncEngine {
     public PlatformName = "Steam"
     public SynchronizedGames: Game[] = []
 
+    static getUserDataDirectoryPath(steamPath: string, steamId: string): string {
+        return join(steamPath, 'userdata', steamId)
+    }
+
+    static getLibraryFoldersFilePath(steamPath: string): string {
+        return join(steamPath, 'config', 'libraryfolders.vdf')
+    }
+
     async SynchronizeGames(): Promise<void> {
+        console.log('Starting Steam game synchronization...')
         try {
             const steamGames = await this.findAllGames()
             this.SynchronizedGames = steamGames
+            console.log(`Steam synchronization completed. Found ${steamGames.length} games.`)
         } catch (error) {
             console.error('Steam sync failed:', error)
             this.SynchronizedGames = []
+            throw new Error(`Steam synchronization failed: ${error}`)
         }
     }
 
@@ -89,34 +100,76 @@ export class SteamSyncEngine implements ISyncEngine {
         ]
 
         for (const path of commonPaths) {
-            if (path && existsSync(path) && existsSync(join(path, 'steam.exe'))) {
+            if (path && this.isValidSteamInstallation(path)) {
+                console.log(`Found Steam at default path: ${path}`)
                 return path
             }
         }
 
-        // Try registry lookup
-        try {
-            const result = await execAsync('reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Valve\\Steam" /v InstallPath')
-            const match = result.stdout.match(/InstallPath\s+REG_SZ\s+(.+)/)
-            if (match) {
-                const path = match[1].trim()
-                if (existsSync(path) && existsSync(join(path, 'steam.exe'))) {
-                    return path
-                }
-            }
-        } catch (error) {
-            // Try 32-bit registry
+        // Try registry lookup - check CurrentUser first, then LocalMachine
+        const steamPath = await this.getSteamPathFromRegistry()
+        if (steamPath && this.isValidSteamInstallation(steamPath)) {
+            console.log(`Found Steam via registry: ${steamPath}`)
+            return steamPath
+        }
+
+        console.log('Steam installation not found in default paths or registry')
+        return null
+    }
+
+    private isValidSteamInstallation(steamPath: string): boolean {
+        if (!steamPath || !existsSync(steamPath)) {
+            return false
+        }
+
+        // Check if steam.exe exists
+        if (!existsSync(join(steamPath, 'steam.exe'))) {
+            return false
+        }
+
+        // Check if libraryfolders.vdf exists (more reliable validation)
+        const libraryFoldersPath = join(steamPath, 'config', 'libraryfolders.vdf')
+        if (!existsSync(libraryFoldersPath)) {
+            console.log(`Steam path ${steamPath} is missing libraryfolders.vdf`)
+            return false
+        }
+
+        return true
+    }
+
+    private async getSteamPathFromRegistry(): Promise<string | null> {
+        const registryKeys = [
+            // Try CurrentUser first (per-user installation)
+            'HKEY_CURRENT_USER\\Software\\Valve\\Steam',
+            // Then try LocalMachine (system-wide installation)
+            'HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Valve\\Steam',
+            'HKEY_LOCAL_MACHINE\\SOFTWARE\\Valve\\Steam'
+        ]
+
+        for (const registryKey of registryKeys) {
             try {
-                const result32 = await execAsync('reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Valve\\Steam" /v InstallPath')
-                const match32 = result32.stdout.match(/InstallPath\s+REG_SZ\s+(.+)/)
-                if (match32) {
-                    const path = match32[1].trim()
-                    if (existsSync(path) && existsSync(join(path, 'steam.exe'))) {
+                const result = await execAsync(`reg query "${registryKey}" /v SteamPath`)
+                const match = result.stdout.match(/SteamPath\s+REG_SZ\s+(.+)/)
+                if (match) {
+                    const path = match[1].trim()
+                    if (path && existsSync(path)) {
                         return path
                     }
                 }
-            } catch (error2) {
-                // Registry lookup failed
+            } catch (error) {
+                // Try InstallPath as fallback
+                try {
+                    const result = await execAsync(`reg query "${registryKey}" /v InstallPath`)
+                    const match = result.stdout.match(/InstallPath\s+REG_SZ\s+(.+)/)
+                    if (match) {
+                        const path = match[1].trim()
+                        if (path && existsSync(path)) {
+                            return path
+                        }
+                    }
+                } catch (error2) {
+                    // Continue to next registry key
+                }
             }
         }
 
@@ -124,11 +177,11 @@ export class SteamSyncEngine implements ISyncEngine {
     }
 
     private async parseLibraryFoldersManifest(steamPath: string): Promise<SteamLibraryFolder[]> {
-        const manifestPath = join(steamPath, 'steamapps', 'libraryfolders.vdf')
+        const manifestPath = join(steamPath, 'config', 'libraryfolders.vdf')
         const libraries: SteamLibraryFolder[] = []
 
         if (!existsSync(manifestPath)) {
-            console.log('libraryfolders.vdf not found')
+            console.error(`libraryfolders.vdf not found at ${manifestPath}`)
             return libraries
         }
 
@@ -147,6 +200,13 @@ export class SteamSyncEngine implements ISyncEngine {
                 if (pathMatch) {
                     const libraryPath = pathMatch[1].replace(/\\\\/g, '\\')
                     
+                    // Validate library path exists
+                    const steamappsPath = join(libraryPath, 'steamapps')
+                    if (!existsSync(steamappsPath)) {
+                        console.warn(`Library path does not exist: ${steamappsPath}`)
+                        continue
+                    }
+                    
                     // Extract label if present
                     const labelMatch = libraryContent.match(/"label"\s+"([^"]*)"/)
                     const label = labelMatch ? labelMatch[1] : ''
@@ -156,14 +216,17 @@ export class SteamSyncEngine implements ISyncEngine {
                     const tool = toolMatch ? toolMatch[1] : '0'
                     
                     libraries.push({
-                        path: join(libraryPath, 'steamapps'),
+                        path: steamappsPath,
                         label,
                         tool
                     })
+                    
+                    console.log(`Added library folder: ${steamappsPath}`)
                 }
             }
         } catch (error) {
             console.error('Failed to parse libraryfolders.vdf:', error)
+            throw new Error(`Failed to parse Steam library folders: ${error}`)
         }
 
         return libraries
