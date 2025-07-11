@@ -2,9 +2,9 @@
 
 A streamlined Raycast extension that provides instant access to your PC games across multiple platforms.
 
-![alt text](./assets/image-1.png)
+![alt text](./assets/search.png)
 
-![alt text](./assets/image.png)
+![alt text](./assets/settings.png)
 
 *Based on https://github.com/PuttTim/windows-terminal project structure & setup*
 
