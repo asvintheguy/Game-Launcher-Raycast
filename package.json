@@ -1,0 +1,206 @@
+{
+    "$schema": "https://www.raycast.com/schemas/extension.json",
+    "name": "game-launcher",
+    "title": "Game Launcher",
+    "description": "Launch games from Steam, Epic Games, GOG, and other platforms",
+    "icon": "icon.png",
+    "author": "putttim",
+    "categories": [
+        "Applications"
+    ],
+    "license": "MIT",
+    "platforms": [
+        "Windows"
+    ],
+    "commands": [
+        {
+            "name": "launch-game",
+            "title": "Launch A Game",
+            "description": "Search and launch games from various platforms",
+            "mode": "view"
+        }
+    ],
+    "preferences": [
+        {
+            "name": "enableSteam",
+            "title": "Enable Steam",
+            "label": "Platforms",
+            "description": "Enable Steam game detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableEpicGames",
+            "title": "Enable Epic Games",
+            "label": "Platforms",
+            "description": "Enable Epic Games game detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableGOG",
+            "title": "Enable GOG",
+            "label": "Platforms",
+            "description": "Enable GOG game detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableUbisoft",
+            "title": "Enable Ubisoft Connect",
+            "label": "Platforms",
+            "description": "Enable Ubisoft Connect game detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableEAApp",
+            "title": "Enable EA App",
+            "label": "Platforms",
+            "description": "Enable EA App game detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableShortcuts",
+            "title": "Enable Shortcuts",
+            "label": "Platforms",
+            "description": "Enable custom shortcut detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "customDir1Name",
+            "title": "Custom Directory 1 Name",
+            "label": "Shortcuts",
+            "description": "Display name for first custom directory",
+            "type": "textfield",
+            "required": false,
+            "default": "Custom 1"
+        },
+        {
+            "name": "customDir1",
+            "title": "Custom Directory 1",
+            "label": "Shortcuts",
+            "description": "First custom directory for shortcuts",
+            "type": "directory",
+            "required": false
+        },
+        {
+            "name": "customDir2Name",
+            "title": "Custom Directory 2 Name",
+            "label": "Shortcuts",
+            "description": "Display name for second custom directory",
+            "type": "textfield",
+            "required": false,
+            "default": "Custom 2"
+        },
+        {
+            "name": "customDir2",
+            "title": "Custom Directory 2",
+            "label": "Shortcuts",
+            "description": "Second custom directory for shortcuts",
+            "type": "directory",
+            "required": false
+        },
+        {
+            "name": "customDir3Name",
+            "title": "Custom Directory 3 Name",
+            "label": "Shortcuts",
+            "description": "Display name for third custom directory",
+            "type": "textfield",
+            "required": false,
+            "default": "Custom 3"
+        },
+        {
+            "name": "customDir3",
+            "title": "Custom Directory 3",
+            "label": "Shortcuts",
+            "description": "Third custom directory for shortcuts",
+            "type": "directory",
+            "required": false
+        },
+        {
+            "name": "customDir4Name",
+            "title": "Custom Directory 4 Name",
+            "label": "Shortcuts",
+            "description": "Display name for fourth custom directory",
+            "type": "textfield",
+            "required": false,
+            "default": "Custom 4"
+        },
+        {
+            "name": "customDir4",
+            "title": "Custom Directory 4",
+            "label": "Shortcuts",
+            "description": "Fourth custom directory for shortcuts",
+            "type": "directory",
+            "required": false
+        },
+        {
+            "name": "customDir5Name",
+            "title": "Custom Directory 5 Name",
+            "label": "Shortcuts",
+            "description": "Display name for fifth custom directory",
+            "type": "textfield",
+            "required": false,
+            "default": "Custom 5"
+        },
+        {
+            "name": "customDir5",
+            "title": "Custom Directory 5",
+            "label": "Shortcuts",
+            "description": "Fifth custom directory for shortcuts",
+            "type": "directory",
+            "required": false
+        },
+        {
+            "name": "sortOrder",
+            "title": "Game Sort Order",
+            "label": "Display",
+            "description": "Choose how games are sorted in the list",
+            "type": "dropdown",
+            "required": false,
+            "default": "alphabetical",
+            "data": [
+                {
+                    "title": "Alphabetical",
+                    "value": "alphabetical"
+                },
+                {
+                    "title": "Last Played",
+                    "value": "lastPlayed"
+                },
+                {
+                    "title": "Platform",
+                    "value": "platform"
+                }
+            ]
+        }
+    ],
+    "dependencies": {
+        "@raycast/api": "^1.40.0",
+        "@raycast/utils": "^1.4.8"
+    },
+    "devDependencies": {
+        "@raycast/eslint-config": "^1.0.6",
+        "@types/node": "^18.18.4",
+        "@types/react": "^19.1.8",
+        "eslint": "^8.51.0",
+        "prettier": "^3.0.3",
+        "typescript": "^5.2.2"
+    },
+    "scripts": {
+        "build": "ray build -e dist",
+        "dev": "ray develop",
+        "fix-lint": "ray lint --fix",
+        "lint": "ray lint",
+        "publish": "ray publish"
+    }
+}
