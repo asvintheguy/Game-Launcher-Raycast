@@ -6,6 +6,7 @@ import { Game, Preferences, ISyncEngine } from "./platforms/interfaces"
 import { SteamSyncEngine } from "./platforms/steam/SteamSyncEngine"
 import { EpicSyncEngine } from "./platforms/epic/EpicSyncEngine"
 import { GOGSyncEngine } from "./platforms/gog/GOGSyncEngine"
+import { ShortcutsSyncEngine } from "./platforms/shortcuts/ShortcutsSyncEngine"
 
 const execAsync = promisify(exec)
 const preferences: Preferences = getPreferenceValues()
@@ -27,6 +28,15 @@ async function loadGames(): Promise<Game[]> {
     
     if (preferences.enableGOG) {
         syncEngines.push(new GOGSyncEngine())
+    }
+    
+    // Check if any shortcut directories are enabled
+    const hasEnabledShortcuts = preferences.customDir1Enable || preferences.customDir2Enable || 
+                               preferences.customDir3Enable || preferences.customDir4Enable || 
+                               preferences.customDir5Enable
+    
+    if (hasEnabledShortcuts) {
+        syncEngines.push(new ShortcutsSyncEngine(preferences))
     }
     
     // Synchronize games from all enabled platforms

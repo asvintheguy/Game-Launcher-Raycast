@@ -42,15 +42,15 @@ export class ShortcutsSyncEngine implements ISyncEngine {
         
         // Check each custom directory configuration
         const customDirs = [
-            { path: this.preferences.customDir1, name: this.preferences.customDir1Name },
-            { path: this.preferences.customDir2, name: this.preferences.customDir2Name },
-            { path: this.preferences.customDir3, name: this.preferences.customDir3Name },
-            { path: this.preferences.customDir4, name: this.preferences.customDir4Name },
-            { path: this.preferences.customDir5, name: this.preferences.customDir5Name }
+            { path: this.preferences.customDir1, name: this.preferences.customDir1Name, enabled: this.preferences.customDir1Enable },
+            { path: this.preferences.customDir2, name: this.preferences.customDir2Name, enabled: this.preferences.customDir2Enable },
+            { path: this.preferences.customDir3, name: this.preferences.customDir3Name, enabled: this.preferences.customDir3Enable },
+            { path: this.preferences.customDir4, name: this.preferences.customDir4Name, enabled: this.preferences.customDir4Enable },
+            { path: this.preferences.customDir5, name: this.preferences.customDir5Name, enabled: this.preferences.customDir5Enable }
         ]
 
         for (const dir of customDirs) {
-            if (dir.path && existsSync(dir.path)) {
+            if (dir.path && dir.enabled && existsSync(dir.path)) {
                 directories.push({
                     path: dir.path,
                     name: dir.name || basename(dir.path)
@@ -145,13 +145,9 @@ export class ShortcutsSyncEngine implements ISyncEngine {
         return {
             id: `shortcut-${Buffer.from(shortcut.path).toString('base64')}`,
             title: shortcut.name,
-            platform: `${this.PlatformName} (${shortcut.directory.name})`,
+            platform: shortcut.directory.name,
             iconPath: shortcut.iconPath,
-            launchCommand: shortcut.path,
-            uninstallCommand: `Delete "${shortcut.name}"`,
-            runTask: async () => {
-                await this.runShortcut(shortcut.path)
-            }
+            launchCommand: shortcut.path
         }
     }
 

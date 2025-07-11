@@ -1,21 +1,47 @@
-# Raycast - Windows Terminal Profiles
+# Game Launcher for Raycast
 
-Quick way to open your Terminal Profile easily with Raycast!
+A streamlined Raycast extension that provides instant access to your PC games across multiple platforms.
 
 ![alt text](./assets/image-1.png)
 
 ![alt text](./assets/image.png)
 
-# Publishing / Installation
+*Based on https://github.com/PuttTim/windows-terminal project structure & setup*
 
-Currently not published to the Raycast Store as the store does not support Windows-only extensions (yet).
+## Features
 
-You can install it manually by cloning this repository and running `npm ci` then `npm run dev` and it'll be available in your Raycast.
+- Launch games from Steam, Epic Games, GOG, and other platforms
+- Unified game library with platform-specific icons
+- Keyboard shortcuts for quick access
+- Automatic window closing after game launch
 
-# Tips
+## Installation
 
-- You assign a keyboard shortcut to this to easily open the list of profiles. (personally I use `win + T`)
+This extension is not available in the Raycast Store (Windows-only extensions aren't supported yet).
 
-# Contributing
+### Prerequisites
 
-If you want to contribute, feel free to open an issue or a pull request. Any help is appreciated! (but this repository will probably be moved to the main raycast/extensions repository once publishing is supported)
+Install the required dependencies:
+
+```bash
+winget install -e --id OpenJS.NodeJS
+```
+
+### Setup
+
+1. Clone this repository
+2. Install dependencies: `npm ci`
+3. Start development mode: `npm run dev`
+4. The extension will be automatically added to Raycast
+
+## Usage Tips
+
+- Assign a keyboard shortcut for quick access
+- Games are automatically detected from installed platforms
+- Use the settings to configure custom shortcut directories to add more games
+
+## Contributing
+
+Contributions are welcome! Feel free to submit issues or pull requests. 
+
+*Note: This repository may be moved to the main raycast/extensions repository once Windows extensions are officially supported.*
