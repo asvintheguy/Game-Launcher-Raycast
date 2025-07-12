@@ -30,8 +30,8 @@ winget install -e --id OpenJS.NodeJS
 ### Setup
 
 1. Clone this repository
-2. Install dependencies: `npm ci`
-3. Start development mode: `npm run dev`
+2. Install dependencies by running this command in your directory in terminal: `npm ci`
+3. Start development mode to install the extension by running this command in your directory in terminal: `npm run dev`
 4. The extension will be automatically added to Raycast
 
 ## Usage Tips
