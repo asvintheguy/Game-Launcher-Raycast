@@ -149,11 +149,185 @@ async function uninstallGame(game: Game) {
 
 export default function Command() {
     const [showingDetail, setShowingDetail] = useState(true)
+    const [groupByPlatform, setGroupByPlatform] = useState(false)
     const { data: games, isLoading, revalidate } = useCachedPromise(loadGames)
 
-    return (
-        <List isLoading={isLoading} isShowingDetail={showingDetail} searchBarPlaceholder="Search games...">
-            {games?.map((game: Game) => {
+    const renderContent = () => {
+        if (!games) return null
+        
+        if (groupByPlatform) {
+            // Group games by platform
+            const gamesByPlatform = games.reduce((acc, game) => {
+                if (!acc[game.platform]) {
+                    acc[game.platform] = []
+                }
+                acc[game.platform].push(game)
+                return acc
+            }, {} as Record<string, Game[]>)
+            
+            return Object.entries(gamesByPlatform).map(([platform, platformGames]) => (
+                <List.Section key={platform} title={platform}>
+                    {platformGames.map((game) => {
+                        const fancyTitle = createFancyGameTitle(game.title, game.favorite, game.description)
+
+                        const props: Partial<List.Item.Props> = showingDetail
+                            ? {
+                                  detail: (
+                                      <List.Item.Detail
+                                          markdown={fancyTitle}
+                                          metadata={
+                                              <List.Item.Detail.Metadata>
+                                                  {game.source && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.Label title="Source" text={game.source} />
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.developers?.length && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.TagList
+                                                              title={`Developer${game.developers.length > 1 ? "s" : ""}`}
+                                                          >
+                                                              {game.developers.map((dev, index) => (
+                                                                  <List.Item.Detail.Metadata.TagList.Item
+                                                                      key={index}
+                                                                      text={dev}
+                                                                  />
+                                                              ))}
+                                                          </List.Item.Detail.Metadata.TagList>
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.publishers?.length && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.TagList
+                                                              title={`Publisher${game.publishers.length > 1 ? "s" : ""}`}
+                                                          >
+                                                              {game.publishers.map((pub, index) => (
+                                                                  <List.Item.Detail.Metadata.TagList.Item
+                                                                      key={index}
+                                                                      text={pub}
+                                                                  />
+                                                              ))}
+                                                          </List.Item.Detail.Metadata.TagList>
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.genres?.length && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.TagList title="Genres">
+                                                              {game.genres.map((genre, index) => (
+                                                                  <List.Item.Detail.Metadata.TagList.Item
+                                                                      key={index}
+                                                                      text={genre}
+                                                                  />
+                                                              ))}
+                                                          </List.Item.Detail.Metadata.TagList>
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.releaseDate && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.Label
+                                                              title="Release Date"
+                                                              text={game.releaseDate}
+                                                          />
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.added && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.Label title="Added" text={game.added} />
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  {game.lastActivity && (
+                                                      <>
+                                                          <List.Item.Detail.Metadata.Label
+                                                              title="Last Activity"
+                                                              text={game.lastActivity}
+                                                          />
+                                                          <List.Item.Detail.Metadata.Separator />
+                                                      </>
+                                                  )}
+                                                  <List.Item.Detail.Metadata.Label title="Platform" text={game.platform} />
+                                                  <List.Item.Detail.Metadata.Separator />
+                                                  <List.Item.Detail.Metadata.Label title="Game ID" text={game.id} />
+                                              </List.Item.Detail.Metadata>
+                                          }
+                                      />
+                                  ),
+                              }
+                            : { accessories: [{ text: game.platform }] }
+
+                        return (
+                            <List.Item
+                                key={game.id}
+                                title={game.title}
+                                subtitle={!showingDetail ? undefined : undefined}
+                                icon={game.iconPath ? { source: game.iconPath } : undefined}
+                                {...props}
+                                actions={
+                                    <ActionPanel>
+                                        <Action title="Launch Game" icon={Icon.Play} onAction={() => launchGame(game)} />
+                                        {game.platform.includes("Playnite") && (
+                                            <Action
+                                                title="Open in Playnite"
+                                                icon={Icon.Window}
+                                                onAction={async () => {
+                                                    try {
+                                                        await execAsync(`start "" playnite://playnite/showgame/${game.id}`)
+                                                        await showToast({
+                                                            style: Toast.Style.Success,
+                                                            title: "Opened in Playnite",
+                                                            message: `Opened ${game.title} in Playnite`,
+                                                        })
+                                                    } catch (error) {
+                                                        await showToast({
+                                                            style: Toast.Style.Failure,
+                                                            title: "Failed to open in Playnite",
+                                                            message: `Could not open ${game.title} in Playnite`,
+                                                        })
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                        {game.uninstallCommand && (
+                                            <Action
+                                                title="Uninstall Game"
+                                                icon={Icon.Trash}
+                                                onAction={() => uninstallGame(game)}
+                                                style={Action.Style.Destructive}
+                                            />
+                                        )}
+                                        <Action
+                                            title="Toggle Details"
+                                            icon={Icon.AppWindowSidebarLeft}
+                                            onAction={() => setShowingDetail(!showingDetail)}
+                                            shortcut={{ modifiers: ["cmd"], key: "d" }}
+                                        />
+                                        <Action
+                                            title={`${groupByPlatform ? "Disable" : "Enable"} Platform Grouping`}
+                                            icon={Icon.AppWindowGrid3x3}
+                                            onAction={() => setGroupByPlatform(!groupByPlatform)}
+                                            shortcut={{ modifiers: ["cmd"], key: "g" }}
+                                        />
+                                        <Action
+                                            title="Reload Games"
+                                            icon={Icon.ArrowClockwise}
+                                            onAction={revalidate}
+                                            shortcut={{ modifiers: ["cmd"], key: "r" }}
+                                        />
+                                    </ActionPanel>
+                                }
+                            />
+                        )
+                    })}
+                </List.Section>
+            ))
+        } else {
+            // Render without grouping
+            return games.map((game: Game) => {
                 const fancyTitle = createFancyGameTitle(game.title, game.favorite, game.description)
 
                 const props: Partial<List.Item.Props> = showingDetail
@@ -293,6 +467,12 @@ export default function Command() {
                                     shortcut={{ modifiers: ["cmd"], key: "d" }}
                                 />
                                 <Action
+                                    title={`${groupByPlatform ? "Disable" : "Enable"} Platform Grouping`}
+                                    icon={Icon.AppWindowGrid3x3}
+                                    onAction={() => setGroupByPlatform(!groupByPlatform)}
+                                    shortcut={{ modifiers: ["cmd"], key: "g" }}
+                                />
+                                <Action
                                     title="Reload Games"
                                     icon={Icon.ArrowClockwise}
                                     onAction={revalidate}
@@ -302,7 +482,13 @@ export default function Command() {
                         }
                     />
                 )
-            })}
+            })
+        }
+    }
+    
+    return (
+        <List isLoading={isLoading} isShowingDetail={showingDetail} searchBarPlaceholder="Search games...">
+            {renderContent()}
             {!isLoading && (!games || games.length === 0) && (
                 <List.EmptyView
                     title="No games found"
