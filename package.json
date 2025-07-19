@@ -18,6 +18,12 @@
             "title": "Launch A Game",
             "description": "Search and launch games from various platforms",
             "mode": "view"
+        },
+        {
+            "name": "setup-playnite",
+            "title": "Set up Playnite Integration",
+            "description": "Download and install Playnite integration plugin",
+            "mode": "view"
         }
     ],
     "preferences": [

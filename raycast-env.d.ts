@@ -62,10 +62,14 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `launch-game` command */
   export type LaunchGame = ExtensionPreferences & {}
+  /** Preferences accessible in the `setup-playnite` command */
+  export type SetupPlaynite = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
   /** Arguments passed to the `launch-game` command */
   export type LaunchGame = {}
+  /** Arguments passed to the `setup-playnite` command */
+  export type SetupPlaynite = {}
 }
 
