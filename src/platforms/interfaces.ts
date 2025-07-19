@@ -21,6 +21,8 @@ export interface Preferences {
     enableGOG: boolean
     enableUbisoft: boolean
     enableEAApp: boolean
+    enablePlaynite: boolean
+    playniteDataPath?: string
     sortOrder: string
     // Custom shortcut directories
     customDir1?: string

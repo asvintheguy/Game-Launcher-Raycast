@@ -6,6 +6,7 @@ import { Game, Preferences, ISyncEngine } from "./platforms/interfaces"
 import { SteamSyncEngine } from "./platforms/steam/SteamSyncEngine"
 import { EpicSyncEngine } from "./platforms/epic/EpicSyncEngine"
 import { GOGSyncEngine } from "./platforms/gog/GOGSyncEngine"
+import { PlayniteSyncEngine } from "./platforms/playnite/PlayniteSyncEngine"
 import { ShortcutsSyncEngine } from "./platforms/shortcuts/ShortcutsSyncEngine"
 
 const execAsync = promisify(exec)
@@ -28,6 +29,10 @@ async function loadGames(): Promise<Game[]> {
     
     if (preferences.enableGOG) {
         syncEngines.push(new GOGSyncEngine())
+    }
+    
+    if (preferences.enablePlaynite) {
+        syncEngines.push(new PlayniteSyncEngine(preferences))
     }
     
     // Check if any shortcut directories are enabled
@@ -60,7 +65,7 @@ async function loadGames(): Promise<Game[]> {
             break
         case "platform":
             allGames.sort((a, b) => {
-                const platformOrder = { "Steam": 1, "Epic Games": 2, "GOG": 3 }
+                const platformOrder = { "Steam": 1, "Epic Games": 2, "GOG": 3, "Playnite": 4 }
                 return (platformOrder[a.platform as keyof typeof platformOrder] || 999) - 
                        (platformOrder[b.platform as keyof typeof platformOrder] || 999)
             })
@@ -81,7 +86,11 @@ async function loadGames(): Promise<Game[]> {
 
 async function launchGame(game: Game) {
     try {
-        await execAsync(`start "" "${game.launchCommand}"`)
+        if (game.launchCommand.startsWith('playnite://')) {
+            await execAsync(`start "" "${game.launchCommand}"`)
+        } else {
+            await execAsync(`start "" "${game.launchCommand}"`)
+        }
         
         await showToast({
             style: Toast.Style.Success,
@@ -166,7 +175,7 @@ export default function Command() {
             {!isLoading && (!games || games.length === 0) && (
                 <List.EmptyView
                     title="No games found"
-                    description="No games were detected on your system. Make sure you have Steam, Epic Games, or GOG installed."
+                    description="No games were detected on your system. Make sure you have Steam, Epic Games, GOG, or Playnite installed."
                     actions={
                         <ActionPanel>
                             <Action title="Reload Games" icon={Icon.ArrowClockwise} onAction={revalidate} />

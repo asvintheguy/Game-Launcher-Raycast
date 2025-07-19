@@ -20,6 +20,10 @@ type ExtensionPreferences = {
   "enableUbisoft": boolean,
   /** Enable EA App - Enable EA App game detection and launching */
   "enableEAApp": boolean,
+  /** Enable Playnite - Enable Playnite game library detection and launching */
+  "enablePlaynite": boolean,
+  /** Playnite Data Path - Custom path to Playnite data directory (leave empty for default %APPDATA%\Playnite) */
+  "playniteDataPath"?: string,
   /** Enable Custom Directory 1 - Enable first custom directory for shortcuts */
   "customDir1Enable": boolean,
   /** Custom Directory 1 Name - Display name for first custom directory */
