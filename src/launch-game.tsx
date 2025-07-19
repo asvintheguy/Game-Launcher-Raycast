@@ -304,19 +304,28 @@ export default function Command() {
                                             title="Toggle Details"
                                             icon={Icon.AppWindowSidebarLeft}
                                             onAction={() => setShowingDetail(!showingDetail)}
-                                            shortcut={{ modifiers: ["cmd"], key: "d" }}
+                                            shortcut={{
+                                                macOS: { modifiers: ["cmd"], key: "d" },
+                                                windows: { modifiers: ["ctrl"], key: "d" },
+                                            }}
                                         />
                                         <Action
                                             title={`${groupByPlatform ? "Disable" : "Enable"} Platform Grouping`}
                                             icon={Icon.AppWindowGrid3x3}
                                             onAction={() => setGroupByPlatform(!groupByPlatform)}
-                                            shortcut={{ modifiers: ["cmd"], key: "g" }}
+                                            shortcut={{
+                                                macOS: { modifiers: ["cmd"], key: "g" },
+                                                windows: { modifiers: ["ctrl"], key: "g" },
+                                            }}
                                         />
                                         <Action
                                             title="Reload Games"
                                             icon={Icon.ArrowClockwise}
                                             onAction={revalidate}
-                                            shortcut={{ modifiers: ["cmd"], key: "r" }}
+                                            shortcut={{
+                                                macOS: { modifiers: ["cmd"], key: "r" },
+                                                windows: { modifiers: ["ctrl"], key: "r" },
+                                            }}
                                         />
                                     </ActionPanel>
                                 }
@@ -464,19 +473,28 @@ export default function Command() {
                                     title="Toggle Details"
                                     icon={Icon.AppWindowSidebarLeft}
                                     onAction={() => setShowingDetail(!showingDetail)}
-                                    shortcut={{ modifiers: ["cmd"], key: "d" }}
+                                    shortcut={{
+                                        macOS: { modifiers: ["cmd"], key: "d" },
+                                        windows: { modifiers: ["ctrl"], key: "d" },
+                                    }}
                                 />
                                 <Action
                                     title={`${groupByPlatform ? "Disable" : "Enable"} Platform Grouping`}
                                     icon={Icon.AppWindowGrid3x3}
                                     onAction={() => setGroupByPlatform(!groupByPlatform)}
-                                    shortcut={{ modifiers: ["cmd"], key: "g" }}
+                                    shortcut={{
+                                        macOS: { modifiers: ["cmd"], key: "g" },
+                                        windows: { modifiers: ["ctrl"], key: "g" },
+                                    }}
                                 />
                                 <Action
                                     title="Reload Games"
                                     icon={Icon.ArrowClockwise}
                                     onAction={revalidate}
-                                    shortcut={{ modifiers: ["cmd"], key: "r" }}
+                                    shortcut={{
+                                        macOS: { modifiers: ["cmd"], key: "r" },
+                                        windows: { modifiers: ["ctrl"], key: "r" },
+                                    }}
                                 />
                             </ActionPanel>
                         }
