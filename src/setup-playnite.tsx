@@ -187,11 +187,17 @@ async function startPlaynite(mode: "normal" | "minimized" | "hidden" | "with-arg
     })
 
     try {
-        await execAsync(command)
+        // Don't await - let Playnite launch and continue running
+        execAsync(command).catch(() => {
+            // Ignore errors since Playnite might be designed to detach
+        })
+        
+        // Give it a moment to start, then show success
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
         await showToast({
             style: Toast.Style.Success,
-            title: "Playnite restarted!",
+            title: "Playnite started!",
             message: `${message} - check system tray`
         })
     } catch (error) {
@@ -392,6 +398,13 @@ ${release.body}
                                 title="Install Plugin"
                                 icon={Icon.Download}
                                 onAction={() => setSelectedAction("install")}
+                            />
+                        )}
+                        {status?.isInstalled && release && (
+                            <Action
+                                title="Update Plugin"
+                                icon={Icon.ArrowClockwise}
+                                onAction={() => setSelectedAction("confirm-update")}
                             />
                         )}
                         <Action
