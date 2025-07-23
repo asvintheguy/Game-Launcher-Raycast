@@ -14,7 +14,7 @@ const preferences: Preferences = getPreferenceValues()
 
 interface ReleaseAsset {
     name: string
-    download_url: string
+    browser_download_url: string
     size: number
 }
 
@@ -56,15 +56,15 @@ function getRaycastLibraryPath(): string {
 async function checkInstallationStatus(): Promise<InstallationStatus> {
     try {
         const pluginPath = getPlaynitePluginPath()
-        const raycastPluginPath = join(pluginPath, "RaycastExport") // Assuming plugin folder name
+        const libraryWatcherPath = join(pluginPath, "LibraryWatcher")
         const libraryJsonPath = getRaycastLibraryPath()
         
-        const isPluginInstalled = existsSync(raycastPluginPath)
+        const isPluginInstalled = existsSync(libraryWatcherPath)
         const isLibraryFilePresent = existsSync(libraryJsonPath)
         
         return {
             isInstalled: isPluginInstalled && isLibraryFilePresent,
-            pluginPath: isPluginInstalled ? raycastPluginPath : undefined,
+            pluginPath: isPluginInstalled ? libraryWatcherPath : undefined,
             libraryJsonPath: isLibraryFilePresent ? libraryJsonPath : undefined,
         }
     } catch (error) {
@@ -73,7 +73,7 @@ async function checkInstallationStatus(): Promise<InstallationStatus> {
 }
 
 async function fetchLatestRelease(): Promise<GitHubRelease> {
-    const response = await fetch("https://api.github.com/repos/yourusername/playnite-raycast-plugin/releases/latest")
+    const response = await fetch("https://api.github.com/repos/anh-chu/playnite-library-watcher-json-export/releases/latest")
     if (!response.ok) {
         throw new Error(`Failed to fetch release: ${response.statusText}`)
     }
@@ -204,14 +204,23 @@ async function startPlaynite(mode: "normal" | "minimized" | "hidden" | "with-arg
     }
 }
 
-async function installPlugin(release: GitHubRelease): Promise<void> {
-    // DEBUGGING: Skip download/extract steps for now
-    /*
-    // Find the plugin ZIP asset
-    const pluginAsset = release.assets.find(asset => asset.name.endsWith('.zip'))
+async function installPlugin(release: GitHubRelease, forceUpdate: boolean = false): Promise<void> {
+    // Find the LibraryWatcher ZIP asset
+    const pluginAsset = release.assets.find(asset => asset.name.match(/LibraryWatcher.*\.zip$/i))
     if (!pluginAsset) {
-        throw new Error("No plugin ZIP file found in release")
+        throw new Error("No LibraryWatcher ZIP file found in release")
     }
+    
+    // Check if LibraryWatcher already exists
+    const pluginDir = getPlaynitePluginPath()
+    const libraryWatcherDir = join(pluginDir, "LibraryWatcher")
+    
+    if (existsSync(libraryWatcherDir) && !forceUpdate) {
+        throw new Error("EXISTING_INSTALLATION")
+    }
+    
+    // Always close Playnite first to avoid file conflicts
+    await killPlayniteProcesses()
     
     const tempDir = join(require('os').tmpdir(), 'raycast-playnite-setup')
     const downloadPath = join(tempDir, pluginAsset.name)
@@ -223,18 +232,12 @@ async function installPlugin(release: GitHubRelease): Promise<void> {
     
     await showToast({
         style: Toast.Style.Animated,
-        title: "Downloading plugin...",
+        title: "Downloading LibraryWatcher...",
         message: `Downloading ${pluginAsset.name}`
     })
     
     // Download the ZIP file
-    await downloadFile(pluginAsset.download_url, downloadPath)
-    
-    // TODO: Add hash verification if you include hashes in your release
-    // const isValid = await verifyFileHash(downloadPath, expectedHash)
-    // if (!isValid) {
-    //     throw new Error("File hash verification failed")
-    // }
+    await downloadFile(pluginAsset.browser_download_url, downloadPath)
     
     await showToast({
         style: Toast.Style.Animated,
@@ -242,19 +245,27 @@ async function installPlugin(release: GitHubRelease): Promise<void> {
         message: "Installing to Playnite Extensions folder"
     })
     
-    // Extract to Playnite Extensions directory
-    const pluginDir = getPlaynitePluginPath()
+    // Create Extensions directory if it doesn't exist
     if (!existsSync(pluginDir)) {
         mkdirSync(pluginDir, { recursive: true })
     }
     
-    // Use PowerShell to extract ZIP (cross-platform alternative would be to use a ZIP library)
-    await execAsync(`powershell -Command "Expand-Archive -Path '${downloadPath}' -DestinationPath '${pluginDir}' -Force"`)
-    */
+    // Create LibraryWatcher directory (will overwrite if updating)
+    if (!existsSync(libraryWatcherDir)) {
+        mkdirSync(libraryWatcherDir, { recursive: true })
+    }
     
-    // DEBUGGING: Test restart process  
-    await killPlayniteProcesses()
-    await startPlaynite("normal") // Just use normal start - reliable
+    // Use PowerShell to extract ZIP contents to LibraryWatcher folder
+    await execAsync(`powershell -Command "Expand-Archive -Path '${downloadPath}' -DestinationPath '${libraryWatcherDir}' -Force"`)
+    
+    await showToast({
+        style: Toast.Style.Success,
+        title: "Plugin installed!",
+        message: "LibraryWatcher extension installed successfully"
+    })
+    
+    // Start Playnite to load the new plugin
+    await startPlaynite("normal")
 }
 
 export default function Command() {
@@ -262,22 +273,71 @@ export default function Command() {
     const { data: status, isLoading: statusLoading, revalidate: revalidateStatus } = useCachedPromise(checkInstallationStatus)
     const { data: release, isLoading: releaseLoading } = useCachedPromise(fetchLatestRelease)
     
+    if (selectedAction === "confirm-update" && release) {
+        return (
+            <Detail
+                markdown={`# ⚠️ LibraryWatcher Already Installed
+
+The LibraryWatcher extension is already installed in your Playnite Extensions folder.
+
+## Do you want to update it?
+
+**Current installation:** LibraryWatcher extension exists
+**Latest version:** ${release.tag_name}
+**Published:** ${new Date(release.published_at).toLocaleDateString()}
+
+## What updating will do:
+1. Close any running Playnite processes
+2. Download the latest LibraryWatcher ZIP
+3. Replace the existing extension files
+4. Start Playnite with the updated extension
+`}
+                actions={
+                    <ActionPanel>
+                        <Action
+                            title="Update Extension"
+                            icon={Icon.ArrowClockwise}
+                            onAction={async () => {
+                                try {
+                                    await installPlugin(release, true)
+                                    await revalidateStatus()
+                                    setSelectedAction(null)
+                                } catch (error) {
+                                    await showToast({
+                                        style: Toast.Style.Failure,
+                                        title: "Update failed",
+                                        message: error instanceof Error ? error.message : "Unknown error"
+                                    })
+                                }
+                            }}
+                        />
+                        <Action
+                            title="Cancel"
+                            icon={Icon.XMarkCircle}
+                            onAction={() => setSelectedAction(null)}
+                        />
+                    </ActionPanel>
+                }
+            />
+        )
+    }
+    
     if (selectedAction === "install" && release) {
         return (
             <Detail
-                markdown={`# Installing Playnite Integration Plugin
+                markdown={`# Installing LibraryWatcher Extension
 
 ## Release: ${release.name}
 **Version:** ${release.tag_name}
 **Published:** ${new Date(release.published_at).toLocaleDateString()}
 
 ## What this will do:
-1. Download the plugin ZIP from GitHub
+1. Download the LibraryWatcher ZIP from GitHub
 2. Extract it to your Playnite Extensions folder
 3. Set up the library export functionality
 
 ## Next steps after installation:
-1. Restart Playnite
+1. Start Playnite
 2. The plugin will automatically export your game library to \`${getRaycastLibraryPath()}\`
 3. Use the main "Launch A Game" command to see your games
 
@@ -290,10 +350,15 @@ ${release.body}
                             icon={Icon.Download}
                             onAction={async () => {
                                 try {
-                                    await installPlugin(release)
+                                    await installPlugin(release, false)
                                     await revalidateStatus()
                                     setSelectedAction(null)
                                 } catch (error) {
+                                    if (error instanceof Error && error.message === "EXISTING_INSTALLATION") {
+                                        setSelectedAction("confirm-update")
+                                        return
+                                    }
+                                    
                                     await showToast({
                                         style: Toast.Style.Failure,
                                         title: "Installation failed",
