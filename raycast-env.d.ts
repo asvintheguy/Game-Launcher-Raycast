@@ -22,6 +22,8 @@ type ExtensionPreferences = {
   "enableEAApp": boolean,
   /** Enable Playnite - Enable Playnite game library detection and launching */
   "enablePlaynite": boolean,
+  /** Enable Xbox - Enable Xbox/Microsoft Store game detection and launching */
+  "enableXbox": boolean,
   /** Playnite Data Path - Custom path to Playnite data directory (leave empty for default %APPDATA%\Playnite) */
   "playniteDataPath"?: string,
   /** Enable Custom Directory 1 - Enable first custom directory for shortcuts */
@@ -64,6 +66,8 @@ declare namespace Preferences {
   export type LaunchGame = ExtensionPreferences & {}
   /** Preferences accessible in the `setup-playnite` command */
   export type SetupPlaynite = ExtensionPreferences & {}
+  /** Preferences accessible in the `setup-xbox` command */
+  export type SetupXbox = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
@@ -71,5 +75,7 @@ declare namespace Arguments {
   export type LaunchGame = {}
   /** Arguments passed to the `setup-playnite` command */
   export type SetupPlaynite = {}
+  /** Arguments passed to the `setup-xbox` command */
+  export type SetupXbox = {}
 }
 
