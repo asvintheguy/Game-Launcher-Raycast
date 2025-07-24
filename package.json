@@ -18,6 +18,12 @@
             "title": "Launch A Game",
             "description": "Search and launch games from various platforms",
             "mode": "view"
+        },
+        {
+            "name": "setup-playnite",
+            "title": "Set up Playnite Integration",
+            "description": "Download and install Playnite integration plugin",
+            "mode": "view"
         }
     ],
     "preferences": [
@@ -88,6 +94,23 @@
             "type": "checkbox",
             "required": false,
             "default": true
+        },
+        {
+            "name": "enablePlaynite",
+            "title": "Enable Playnite",
+            "label": "Platforms",
+            "description": "Enable Playnite game library detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "playniteDataPath",
+            "title": "Playnite Data Path",
+            "label": "Platforms",
+            "description": "Custom path to Playnite data directory (leave empty for default %APPDATA%\\Playnite)",
+            "type": "directory",
+            "required": false
         },
         {
             "name": "customDir1Enable",

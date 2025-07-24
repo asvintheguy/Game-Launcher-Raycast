@@ -7,6 +7,16 @@ export interface Game {
     iconPath?: string
     launchCommand: string
     uninstallCommand?: string
+    description?: string
+    source?: string
+    developers?: string[]
+    publishers?: string[]
+    genres?: string[]
+    releaseDate?: string
+    lastActivity?: string
+    favorite?: boolean
+    added?: string
+    coverImage?: string
 }
 
 export interface ISyncEngine {
@@ -21,6 +31,8 @@ export interface Preferences {
     enableGOG: boolean
     enableUbisoft: boolean
     enableEAApp: boolean
+    enablePlaynite: boolean
+    playniteDataPath?: string
     sortOrder: string
     // Custom shortcut directories
     customDir1?: string
