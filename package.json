@@ -2,7 +2,7 @@
     "$schema": "https://www.raycast.com/schemas/extension.json",
     "name": "game-launcher",
     "title": "Game Launcher",
-    "description": "Launch games from Steam, Epic Games, GOG, and other platforms",
+    "description": "Launch games from Steam, Epic Games, GOG, Xbox, and other platforms",
     "icon": "icon.png",
     "author": "putttim",
     "categories": [
@@ -23,6 +23,12 @@
             "name": "setup-playnite",
             "title": "Set up Playnite Integration",
             "description": "Download and install Playnite integration plugin",
+            "mode": "view"
+        },
+        {
+            "name": "setup-xbox",
+            "title": "Set up Xbox Games",
+            "description": "Authenticate with Xbox Live to enable Xbox game detection",
             "mode": "view"
         }
     ],
@@ -100,6 +106,15 @@
             "title": "Enable Playnite",
             "label": "Platforms",
             "description": "Enable Playnite game library detection and launching",
+            "type": "checkbox",
+            "required": false,
+            "default": true
+        },
+        {
+            "name": "enableXbox",
+            "title": "Enable Xbox",
+            "label": "Platforms",
+            "description": "Enable Xbox/Microsoft Store game detection and launching",
             "type": "checkbox",
             "required": false,
             "default": true

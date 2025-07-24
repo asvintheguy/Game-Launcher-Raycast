@@ -32,6 +32,7 @@ export interface Preferences {
     enableUbisoft: boolean
     enableEAApp: boolean
     enablePlaynite: boolean
+    enableXbox: boolean
     playniteDataPath?: string
     sortOrder: string
     // Custom shortcut directories

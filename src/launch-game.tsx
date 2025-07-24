@@ -8,6 +8,7 @@ import { SteamSyncEngine } from "./platforms/steam/SteamSyncEngine"
 import { EpicSyncEngine } from "./platforms/epic/EpicSyncEngine"
 import { GOGSyncEngine } from "./platforms/gog/GOGSyncEngine"
 import { PlayniteSyncEngine } from "./platforms/playnite/PlayniteSyncEngine"
+import { XboxSyncEngine } from "./platforms/xbox/XboxSyncEngine"
 import { ShortcutsSyncEngine } from "./platforms/shortcuts/ShortcutsSyncEngine"
 
 const execAsync = promisify(exec)
@@ -40,6 +41,10 @@ async function loadGames(): Promise<Game[]> {
 
     if (preferences.enablePlaynite) {
         syncEngines.push(new PlayniteSyncEngine(preferences))
+    }
+
+    if (preferences.enableXbox) {
+        syncEngines.push(new XboxSyncEngine())
     }
 
     // Check if any shortcut directories are enabled
@@ -75,7 +80,7 @@ async function loadGames(): Promise<Game[]> {
             break
         case "platform":
             allGames.sort((a, b) => {
-                const platformOrder = { Steam: 1, "Epic Games": 2, GOG: 3, Playnite: 4 }
+                const platformOrder = { Steam: 1, "Epic Games": 2, GOG: 3, Xbox: 4, Playnite: 5 }
                 return (
                     (platformOrder[a.platform as keyof typeof platformOrder] || 999) -
                     (platformOrder[b.platform as keyof typeof platformOrder] || 999)
@@ -146,6 +151,7 @@ async function uninstallGame(game: Game) {
         })
     }
 }
+
 
 export default function Command() {
     const [showingDetail, setShowingDetail] = useState(true)
@@ -510,7 +516,7 @@ export default function Command() {
             {!isLoading && (!games || games.length === 0) && (
                 <List.EmptyView
                     title="No games found"
-                    description="No games were detected on your system. Make sure you have Steam, Epic Games, GOG, or Playnite installed."
+                    description="No games were detected on your system. Make sure you have Steam, Epic Games, GOG, Xbox, or Playnite installed."
                     actions={
                         <ActionPanel>
                             <Action title="Reload Games" icon={Icon.ArrowClockwise} onAction={revalidate} />
