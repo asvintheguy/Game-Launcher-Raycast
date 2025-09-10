@@ -350,7 +350,10 @@ export class SteamSyncEngine implements ISyncEngine {
             platform: this.PlatformName,
             iconPath: iconPath,
             launchCommand: `steam://launch/${manifest.appid}`,
-            uninstallCommand: `steam://uninstall/${manifest.appid}`
+            uninstallCommand: `steam://uninstall/${manifest.appid}`,
+            runTask: async () => {
+                await execAsync(`start "" "steam://launch/${manifest.appid}"`)
+            }
         }
     }
 
