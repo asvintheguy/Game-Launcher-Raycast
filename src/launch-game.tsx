@@ -271,18 +271,30 @@ export default function Command() {
                                 key={game.id}
                                 title={game.title}
                                 subtitle={!showingDetail ? undefined : undefined}
-                                icon={game.iconPath ? { source: game.iconPath } : undefined}
+                                icon={
+                                    game.iconPath
+                                        ? game.iconPath.endsWith(".exe")
+                                            ? { fileIcon: game.iconPath }
+                                            : { source: game.iconPath }
+                                        : undefined
+                                }
                                 {...props}
                                 actions={
                                     <ActionPanel>
-                                        <Action title="Launch Game" icon={Icon.Play} onAction={() => launchGame(game)} />
+                                        <Action
+                                            title="Launch Game"
+                                            icon={Icon.Play}
+                                            onAction={() => launchGame(game)}
+                                        />
                                         {game.platform.includes("Playnite") && (
                                             <Action
                                                 title="Open in Playnite"
                                                 icon={Icon.Window}
                                                 onAction={async () => {
                                                     try {
-                                                        await execAsync(`start "" playnite://playnite/showgame/${game.id}`)
+                                                        await execAsync(
+                                                            `start "" playnite://playnite/showgame/${game.id}`,
+                                                        )
                                                         await showToast({
                                                             style: Toast.Style.Success,
                                                             title: "Opened in Playnite",
@@ -440,7 +452,13 @@ export default function Command() {
                         key={game.id}
                         title={game.title}
                         subtitle={!showingDetail ? game.platform : undefined}
-                        icon={game.iconPath ? { source: game.iconPath } : undefined}
+                        icon={
+                          game.iconPath 
+                          ? game.iconPath.endsWith(".exe")
+                            ? { fileIcon: game.iconPath }
+                            : { source: game.iconPath }
+                          : undefined
+                        }
                         {...props}
                         actions={
                             <ActionPanel>

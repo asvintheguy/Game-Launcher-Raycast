@@ -260,7 +260,9 @@
     ],
     "dependencies": {
         "@raycast/api": "^1.40.0",
-        "@raycast/utils": "^1.4.8"
+        "@raycast/utils": "^1.4.8",
+        "@types/xml2js": "^0.4.14",
+        "xml2js": "^0.6.2"
     },
     "devDependencies": {
         "@raycast/eslint-config": "^1.0.6",

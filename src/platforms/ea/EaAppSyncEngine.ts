@@ -1,13 +1,10 @@
 // EA App Sync Engine - equivalent to C# EaAppSyncEngine
 
-import { exec } from "child_process"
-import { promisify } from "util"
 import { existsSync, readFileSync } from "fs"
 import { join, dirname } from "path"
 import { ISyncEngine, Game } from "../interfaces"
 import { parseStringPromise } from "xml2js"
-
-const execAsync = promisify(exec)
+import { execAsync } from "../../utils"
 
 interface EaGame {
     id: string
@@ -183,7 +180,8 @@ export class EaAppSyncEngine implements ISyncEngine {
             const result = await parseStringPromise(xmlContent) as InstallerDataXml
 
             const launchers = result.DiPManifest?.runtime?.[0]?.launcher
-            if (!launchers || launchers.length === 0) {
+            // if (!launchers || launchers.length === 0) { // seems unnecessary
+            if (!launchers) {
                 return undefined
             }
 

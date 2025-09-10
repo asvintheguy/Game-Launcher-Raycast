@@ -17,6 +17,7 @@ export interface Game {
     favorite?: boolean
     added?: string
     coverImage?: string
+    runTask?: ()=>void
 }
 
 export interface ISyncEngine {
