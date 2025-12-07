@@ -1,6 +1,7 @@
 // Steam Sync Engine - Based on GameFinder C# implementation
 // https://github.com/erri120/GameFinder/tree/master/src/GameFinder.StoreHandlers.Steam
 
+
 import { exec } from "child_process"
 import { promisify } from "util"
 import { existsSync, readFileSync, readdirSync } from "fs"
@@ -252,7 +253,7 @@ export class SteamSyncEngine implements ISyncEngine {
                         // Check for duplicates using appid
                         if (!seenAppIds.has(manifest.appid)) {
                             seenAppIds.add(manifest.appid)
-                            const game = this.createGameFromManifest(manifest, steamPath)
+                            const game = await this.createGameFromManifest(manifest, steamPath)
                             games.push(game)
                         }
                     }
@@ -325,10 +326,24 @@ export class SteamSyncEngine implements ISyncEngine {
         return !excludeNames.some(exclude => gameName.includes(exclude.toLowerCase()))
     }
 
-    private createGameFromManifest(manifest: SteamAppManifest, steamPath: string): Game {
-        const executablePath = this.getSteamGameExecutable(steamPath, manifest)
-        const iconPath = getGameIcon(executablePath)
-        
+    private async createGameFromManifest(manifest: SteamAppManifest, steamPath: string): Promise<Game> {
+        let iconPath: string | undefined = undefined
+        // find icon in registry: 
+        // HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App <appid>
+        try {
+            const query = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${manifest.appid}`
+            const res = await execAsync(`reg query "${query}" /v DisplayIcon`)
+            const match = res.stdout.match(/DisplayIcon\s+REG_SZ\s+(.+)/)
+            if (match) {
+                iconPath = match[1].trim()
+            }
+        } catch {
+          // 
+        }
+        if (!iconPath) {
+            const executablePath = this.getSteamGameExecutable(steamPath, manifest)
+            iconPath = getGameIcon(executablePath)
+        }
         return {
             id: `steam-${manifest.appid}`,
             title: manifest.name,
